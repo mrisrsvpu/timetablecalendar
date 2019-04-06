@@ -25,7 +25,7 @@ def hello_world():
             continue
         if len(d['name']) < 3:
             continue
-        date_start = datetime.strptime(d['data'], '%d.%m.%Y')
+        date_start = datetime.strptime(d['data']+'T'+d['time'], '%d.%m.%YT%H:%M')
         date_start.replace(tzinfo=TIMEZONE)
 
         name = ' '.join([d['name'], d['class_room'], d['name_of_pedagog']])
