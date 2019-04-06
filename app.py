@@ -44,14 +44,14 @@ def generic_calendar(request_url):
         date_start.replace(tzinfo=TIMEZONE)
 
         name = ' '.join([d['name'], d['class_room'], d['name_of_pedagog']])
-
         event = Event()
         event.add('summary', name)
         event.add('dtstart', date_start)
         event.add('dtend', date_start + timedelta(hours=1, minutes=35))
         event.add('dtstamp', datetime.utcnow())
+        event.add('uid', str(abs(hash(str(name) + str(date_start)))))
         cal.add_component(event)
-    return Response(cal.to_ical(), mimetype='text/calendar')
+    return Response(cal.to_ical(), mimetype='text/plain')
 
 
 if __name__ == '__main__':
