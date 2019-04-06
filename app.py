@@ -1,31 +1,46 @@
 from datetime import datetime, timedelta
+from json import JSONDecodeError
+
+import pytz
 import requests
-import pytz as pytz
-from flask import Flask
+from flask import Flask, Response, abort
 from icalendar import Calendar, Event
 
 app = Flask(__name__)
 
-V_GROUP = 2549
-
-REQUEST_TEMPLATE = 'http://timetable.mris.mikhailche.ru/group/{}'
-
 TIMEZONE = pytz.timezone('Asia/Yekaterinburg')
 
 
-@app.route('/')
-def hello_world():
-    r = requests.get(REQUEST_TEMPLATE.format(V_GROUP))
-    data = r.json()
+@app.route('/timetable/group/<c_id>')
+def group_calendar(c_id):
+    return generic_calendar(request_url='http://timetable.mris.mikhailche.ru/group/{}'.format(c_id))
+
+
+@app.route('/timetable/prep/<c_id>')
+def prep_calendar(c_id):
+    return generic_calendar(request_url='http://timetable.mris.mikhailche.ru/prep/{}'.format(c_id))
+
+
+@app.route('/timetable/aud/<c_id>')
+def aud_calendar(c_id):
+    return generic_calendar(request_url='http://timetable.mris.mikhailche.ru/aud/{}'.format(c_id))
+
+
+def generic_calendar(request_url):
+    r = requests.get(request_url)
+    try:
+        data = r.json()
+    except JSONDecodeError:
+        return abort(400)
     cal = Calendar()
-    cal.add('prodid', '-//My calendar product//mxm.dk//')
+    cal.add('prodid', '-//RSVPU timetable calendar//')
     cal.add('version', '2.0')
     for d in data:
         if not d:
             continue
         if len(d['name']) < 3:
             continue
-        date_start = datetime.strptime(d['data']+'T'+d['time'], '%d.%m.%YT%H:%M')
+        date_start = datetime.strptime(d['data'] + 'T' + d['time'], '%d.%m.%YT%H:%M')
         date_start.replace(tzinfo=TIMEZONE)
 
         name = ' '.join([d['name'], d['class_room'], d['name_of_pedagog']])
@@ -36,7 +51,7 @@ def hello_world():
         event.add('dtend', date_start + timedelta(hours=1, minutes=35))
         event.add('dtstamp', datetime.utcnow())
         cal.add_component(event)
-    return cal.to_ical()
+    return Response(cal.to_ical(), mimetype='text/calendar')
 
 
 if __name__ == '__main__':
