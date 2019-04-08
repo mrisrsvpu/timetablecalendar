@@ -13,20 +13,22 @@ TIMEZONE = pytz.timezone(TIMEZONE_NAME_OLSON)
 
 TIMEZONE_TIMEDELTA = TIMEZONE.utcoffset(datetime.utcnow())
 
+TIMETABLE_API_HOST_NAME = 'timetable.mris.rsvpu.ru'
+
 
 @app.route('/timetable/group/<c_id>')
 def group_calendar(c_id):
-    return generic_calendar(request_url='http://timetable.mris.mikhailche.ru/group/{}'.format(c_id))
+    return generic_calendar(request_url='http://{}/group/{}'.format(TIMETABLE_API_HOST_NAME, c_id))
 
 
 @app.route('/timetable/prep/<c_id>')
 def prep_calendar(c_id):
-    return generic_calendar(request_url='http://timetable.mris.mikhailche.ru/prep/{}'.format(c_id))
+    return generic_calendar(request_url='http://{}/prep/{}'.format(TIMETABLE_API_HOST_NAME, c_id))
 
 
 @app.route('/timetable/aud/<c_id>')
 def aud_calendar(c_id):
-    return generic_calendar(request_url='http://timetable.mris.mikhailche.ru/aud/{}'.format(c_id))
+    return generic_calendar(request_url='http://{}/aud/{}'.format(TIMETABLE_API_HOST_NAME, c_id))
 
 
 def generic_calendar(request_url):
