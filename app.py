@@ -1,10 +1,23 @@
+import logging
 from datetime import datetime, timedelta
 from json import JSONDecodeError
 
 import pytz
 import requests
+import sentry_sdk
 from flask import Flask, Response, abort
 from icalendar import Calendar, Event
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+log = logging.getLogger(__name__)
+
+try:
+    sentry_sdk.init(
+        dsn="https://3e7faf13b25a4104aa81c6e0b0cfbbd5:488995de1d394590bcf2077b4ec7489a@sentry-prod.mris.rsvpu.ru/2",
+        integrations=[FlaskIntegration()]
+    )
+except:
+    log.exception('Invalid sentry configuration')
 
 app = Flask(__name__)
 
@@ -13,22 +26,34 @@ TIMEZONE = pytz.timezone(TIMEZONE_NAME_OLSON)
 
 TIMEZONE_TIMEDELTA = TIMEZONE.utcoffset(datetime.utcnow())
 
-TIMETABLE_API_HOST_NAME = 'timetable.mris.rsvpu.ru'
+TIMETABLE_API_HOST_NAME = 'rsvpu.ru'
 
 
 @app.route('/timetable/group/<c_id>')
 def group_calendar(c_id):
-    return generic_calendar(request_url='http://{}/group/{}'.format(TIMETABLE_API_HOST_NAME, c_id))
+    return generic_calendar(
+        request_url='http://{}/contents/api/rasp.php?v_gru={}'.format(
+            TIMETABLE_API_HOST_NAME, c_id
+        )
+    )
 
 
 @app.route('/timetable/prep/<c_id>')
 def prep_calendar(c_id):
-    return generic_calendar(request_url='http://{}/prep/{}'.format(TIMETABLE_API_HOST_NAME, c_id))
+    return generic_calendar(
+        request_url='http://{}/contents/api/rasp.php?v_prep={}'.format(
+            TIMETABLE_API_HOST_NAME, c_id
+        )
+    )
 
 
 @app.route('/timetable/aud/<c_id>')
 def aud_calendar(c_id):
-    return generic_calendar(request_url='http://{}/aud/{}'.format(TIMETABLE_API_HOST_NAME, c_id))
+    return generic_calendar(
+        request_url='http://{}/contents/api/rasp.php?v_aud={}'.format(
+            TIMETABLE_API_HOST_NAME, c_id
+        )
+    )
 
 
 def generic_calendar(request_url):
@@ -52,13 +77,11 @@ def generic_calendar(request_url):
     for d in data:
         if not d:
             continue
-        if len(d['name']) < 3:
-            continue
-        date_start = datetime.strptime(d['data'] + 'T' + d['time'], '%d.%m.%YT%H:%M')
+        date_start = datetime.strptime(d['date'] + 'T' + d['time'], '%d.%m.%YT%H:%M')
         date_start_aware = TIMEZONE.localize(date_start, is_dst=False)
         date_start_utc = date_start_aware.astimezone(pytz.utc)
 
-        name = ' '.join([d['name'], d['class_room'], d['name_of_pedagog']])
+        name = d['timetable'].strip()
         event = Event()
         event.add('summary', name)
         event.add('dtstart', date_start_utc)

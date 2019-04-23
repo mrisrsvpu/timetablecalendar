@@ -1,4 +1,6 @@
+blinker
 flask
 icalendar
 requests
 pytz
+sentry-sdk
