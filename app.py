@@ -57,7 +57,7 @@ def aud_calendar(c_id):
 
 
 def generic_calendar(request_url):
-    r = requests.get(request_url)
+    r = requests.get(request_url, verify=False)
     try:
         data = r.json()
     except JSONDecodeError:
